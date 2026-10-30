@@ -1,0 +1,9 @@
+langchain
+langchain-anthropic
+langchain-community
+pypdf
+pandas
+python-dotenvscikit-learn
+shap
+matplotlib
+numpy

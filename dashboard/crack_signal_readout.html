@@ -1,0 +1,778 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Crack Signal Readout</title>
+<meta name="description" content="Will this IN939 print crack? A literature-trained model, real acoustic and thermal recordings, and the gaps between them.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Hanken+Grotesk:wght@400;500;600&display=swap">
+<style>
+/* Layout idea: the page is a part being printed. Each section is a new layer.
+   Ground, ink and one laser-orange accent; teal marks the safe side of every comparison. */
+:root{
+  --ground:#0c0f11; --surface:#13181b; --surface-2:#1b2227; --step:#232c32;
+  --ink:#eceae5; --ink-2:#a6afb0; --ink-3:#737f82;
+  --accent:#ff5a1f; --accent-text:#ff7a45; --on-accent:#0c0f11;
+  --cool:#4fb8c6; --cool-text:#6fcfdc;
+  --font-display:"Bricolage Grotesque","Arial Narrow",Arial,sans-serif;
+  --font-body:"Hanken Grotesk",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --bar:64px; --gut:clamp(16px,4vw,44px);
+  color-scheme:dark;
+}
+@media (prefers-color-scheme:light){
+  :root:not([data-theme="dark"]){
+    --ground:#eceff0; --surface:#ffffff; --surface-2:#e1e6e8; --step:#d3dadd;
+    --ink:#101417; --ink-2:#465154; --ink-3:#6c787b;
+    --accent:#e2470d; --accent-text:#b73706; --on-accent:#ffffff;
+    --cool:#0e7c8a; --cool-text:#0b6772;
+    color-scheme:light;
+  }
+}
+:root[data-theme="light"]{
+  --ground:#eceff0; --surface:#ffffff; --surface-2:#e1e6e8; --step:#d3dadd;
+  --ink:#101417; --ink-2:#465154; --ink-3:#6c787b;
+  --accent:#e2470d; --accent-text:#b73706; --on-accent:#ffffff;
+  --cool:#0e7c8a; --cool-text:#0b6772;
+  color-scheme:light;
+}
+:root[data-theme="dark"]{ color-scheme:dark; }
+
+*{box-sizing:border-box}
+html{scroll-padding-top:var(--bar)}
+body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--font-body);font-size:1.0625rem;line-height:1.55;
+  -webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums;overflow-x:hidden}
+h1,h2,h3,p,ul,ol,figure{margin:0}
+ul,ol{padding:0;list-style:none}
+a{color:inherit}
+.wrap{max-width:1240px;margin:0 auto;padding-left:max(var(--gut),env(safe-area-inset-left,0px));padding-right:max(var(--gut),env(safe-area-inset-right,0px))}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
+.skip{position:absolute;left:12px;top:-60px;background:var(--accent);color:var(--on-accent);padding:10px 16px;font-weight:600;z-index:100}
+.skip:focus{top:12px}
+
+/* ---------- top bar ---------- */
+.bar{position:sticky;top:0;z-index:50;height:var(--bar);background:var(--ground);display:flex;align-items:center}
+.bar{transition:background-color .2s ease,box-shadow .2s ease}
+.bar.is-stuck{background:var(--surface);box-shadow:0 1px 0 var(--step)}
+.bar .wrap{display:flex;align-items:center;gap:28px;width:100%}
+.mark{font-family:var(--font-display);font-weight:800;font-size:1.15rem;letter-spacing:-.02em;text-decoration:none;white-space:nowrap}
+.bar nav{display:flex;gap:26px;margin-left:auto}
+.bar nav a{text-decoration:none;color:var(--ink-2);font-size:.95rem;font-weight:500;padding:6px 0}
+.bar nav a:hover{color:var(--ink)}
+.bar-end{display:flex;gap:10px;align-items:center}
+.btn{white-space:nowrap;display:inline-flex;align-items:center;justify-content:center;font:600 .95rem/1 var(--font-body);text-decoration:none;background:var(--accent);color:var(--on-accent);
+  padding:12px 18px;border:0;border-radius:999px;cursor:pointer;transition:transform .15s ease,filter .15s ease}
+.btn:hover{filter:brightness(1.08);transform:translateY(-1px)}
+.btn:active{transform:translateY(0) scale(.98)}
+.btn-lg{padding:17px 28px;font-size:1.05rem}
+.btn-ghost{background:var(--surface-2);color:var(--ink)}
+.progress{position:fixed;left:0;top:0;height:3px;width:100%;background:var(--accent);transform-origin:0 50%;transform:scaleX(0);z-index:60;pointer-events:none}
+
+/* ---------- hero ---------- */
+.hero{padding-block:clamp(20px,3vw,40px) clamp(24px,3.5vw,48px);overflow:hidden}
+.hero .wrap{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr);grid-template-areas:"h h" "t a";gap:clamp(28px,4vw,56px) clamp(24px,4vw,64px);align-items:start}
+.hero h1{grid-area:h;font-family:var(--font-display);font-weight:800;font-size:clamp(3.1rem,11.2vw,10.4rem);line-height:.88;letter-spacing:-.05em;text-wrap:balance}
+.hero .copy{grid-area:t;padding-top:4px}
+.hero h1 em{font-style:normal;color:var(--accent)}
+.lede{max-width:34ch;font-size:clamp(1.1rem,1.7vw,1.4rem);line-height:1.4;color:var(--ink-2)}
+.cta{margin-top:clamp(24px,3.5vw,40px);display:flex;gap:14px;flex-wrap:wrap;align-items:center}
+.facts{margin-top:clamp(28px,4vw,48px);display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:clamp(14px,2.5vw,32px)}
+.facts b{display:block;white-space:nowrap;font-family:var(--font-display);font-weight:800;font-size:clamp(1.4rem,2.3vw,2rem);letter-spacing:-.03em;line-height:1}
+.facts span{display:block;margin-top:8px;font-size:.9rem;line-height:1.35;color:var(--ink-2)}
+.hero-art{grid-area:a;position:relative;aspect-ratio:5/4;max-height:70vh;width:100%;background:var(--surface);border-radius:6px;overflow:hidden}
+.hero-art canvas{position:absolute;inset:0;width:100%;height:100%;display:block;cursor:crosshair}
+.art-cap{position:absolute;left:16px;bottom:14px;right:16px;font-size:.82rem;color:var(--ink-3);pointer-events:none}
+
+/* ---------- sections ---------- */
+section{padding-block:clamp(56px,7vw,104px) 0}
+.sec-head{display:grid;grid-template-columns:minmax(0,1fr);gap:16px;margin-bottom:clamp(28px,4vw,52px);max-width:58rem}
+.tag{font:600 .85rem/1 var(--font-body);color:var(--ink-2);display:inline-flex;align-items:center;gap:10px}
+.tag::before{content:"";width:10px;height:10px;background:var(--accent)}
+.tag.cool::before{background:var(--cool)}
+h2{font-family:var(--font-display);font-weight:800;font-size:clamp(2.1rem,5.6vw,4.6rem);line-height:.98;letter-spacing:-.035em;text-wrap:balance}
+h3{font-family:var(--font-display);font-weight:600;font-size:clamp(1.3rem,2.3vw,1.8rem);letter-spacing:-.02em;line-height:1.15;text-wrap:balance}
+.sub{color:var(--ink-2);max-width:60ch;font-size:1.1rem}
+.small{font-size:.92rem;color:var(--ink-2)}
+.block{margin-top:clamp(40px,5vw,72px)}
+.block > h3{margin-bottom:12px}
+.block > .small{max-width:62ch;margin-bottom:28px}
+
+/* ---------- three instruments: stacked layers ---------- */
+.stack{display:grid;gap:18px;padding-bottom:40px}
+.card{position:sticky;top:calc(var(--bar) + 10px + var(--i) * 18px);background:var(--surface);border-radius:6px;padding:clamp(22px,3.6vw,44px);
+  display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,.8fr);gap:clamp(18px,4vw,56px);align-items:end;min-height:clamp(220px,32vh,330px)}
+.card:nth-child(2){background:var(--surface-2)}
+.card:nth-child(3){background:var(--step)}
+.card h3{margin:14px 0 10px}
+.card p{color:var(--ink-2);max-width:44ch}
+.card .big{font-family:var(--font-display);font-weight:800;font-size:clamp(2.6rem,6vw,5rem);line-height:.9;letter-spacing:-.04em}
+.card .big small{display:block;margin-top:10px;font:500 .95rem/1.35 var(--font-body);letter-spacing:0;color:var(--ink-2)}
+.card.is-accent .big{color:var(--accent)}
+
+/* ---------- specimen wall ---------- */
+.wall{display:grid;gap:0}
+.wall-row{display:grid;grid-template-columns:minmax(150px,210px) minmax(0,1fr);gap:18px;align-items:center;padding:12px 0;background:linear-gradient(var(--surface-2),var(--surface-2)) bottom/100% 1px no-repeat}
+.wall-row:last-child{background:none}
+.wall-name{font-weight:600;font-size:.95rem}
+.wall-name span{display:block;font-weight:400;color:var(--ink-3);font-size:.84rem}
+.cells{display:flex;flex-wrap:wrap;gap:3px}
+.sq{width:14px;height:14px;border-radius:2px;background:var(--accent);position:relative;flex:none}
+.sq.no{background:var(--cool)}
+.sq.dp::after{content:"";position:absolute;left:4px;top:4px;width:6px;height:6px;border-radius:50%;background:var(--ground)}
+.legend{display:flex;gap:22px;flex-wrap:wrap;margin-top:22px;font-size:.9rem;color:var(--ink-2)}
+.legend i{display:inline-block;width:14px;height:14px;border-radius:2px;vertical-align:-2px;margin-right:8px}
+
+/* ---------- numbers ---------- */
+.duel{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:clamp(18px,4vw,64px)}
+.num{font-family:var(--font-display);font-weight:800;font-size:clamp(3.6rem,11vw,9.5rem);line-height:.88;letter-spacing:-.05em}
+.num small{font-size:.45em;letter-spacing:-.02em;margin-left:.04em}
+.num.accent{color:var(--accent)}
+.duel .cap{margin-top:14px;max-width:34ch;color:var(--ink-2)}
+.meter{margin-top:20px;height:12px;background:var(--surface-2);border-radius:2px;overflow:hidden}
+.meter > i{display:block;height:100%;width:var(--w);background:var(--ink-3);transform-origin:0 50%}
+.meter.accent > i{background:var(--accent)}
+.pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:clamp(18px,4vw,64px);margin-top:clamp(28px,4vw,48px)}
+.pair .num{font-size:clamp(2.8rem,7vw,5.6rem)}
+
+/* ---------- shap ---------- */
+.shap{display:grid;gap:12px}
+.shap-row{display:grid;grid-template-columns:minmax(120px,190px) minmax(0,1fr) 56px;gap:16px;align-items:center}
+.shap-row .lab{font-weight:500;text-align:right;color:var(--ink-2)}
+.shap-row .trk{height:30px;background:var(--surface);border-radius:2px;overflow:hidden}
+.shap-row .trk i{display:block;height:100%;width:var(--w);background:var(--ink-3);transform-origin:0 50%}
+.shap-row .val{font-weight:600;text-align:right}
+.shap-row.top .lab{color:var(--ink);font-weight:600}
+.shap-row.top .trk i{background:var(--accent)}
+.shap-row.top .val{color:var(--accent-text)}
+.callout{margin-top:26px;max-width:60ch;font-size:1.12rem}
+
+/* ---------- confusion + specimens ---------- */
+.two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:clamp(28px,5vw,80px);align-items:start}
+.cm{display:grid;grid-template-columns:auto repeat(2,minmax(0,1fr));grid-template-rows:auto repeat(2,minmax(120px,1fr));gap:6px;max-width:520px}
+.cm .h{font-size:.8rem;font-weight:600;color:var(--ink-3);display:flex;align-items:center;justify-content:center;text-align:center;padding:2px 6px}
+.cm .r{writing-mode:vertical-rl;transform:rotate(180deg)}
+.cm .c{border-radius:4px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:12px}
+.cm .c b{font-family:var(--font-display);font-weight:800;font-size:clamp(2rem,5vw,3.4rem);line-height:1;letter-spacing:-.03em}
+.cm .c span{font-size:.82rem;font-weight:600}
+.cm .ok{background:var(--cool);color:var(--on-accent)}
+.cm .bad{background:var(--accent);color:var(--on-accent)}
+.spec{display:grid;gap:14px}
+.spec-card{background:var(--surface);border-radius:6px;padding:22px}
+.spec-card .nm{font-weight:600}
+.spec-card .ved{color:var(--ink-2);font-size:.92rem;margin-top:2px}
+.spec-card .risk{margin-top:18px;display:flex;align-items:baseline;gap:12px}
+.spec-card .risk b{font-family:var(--font-display);font-weight:800;font-size:2.6rem;letter-spacing:-.03em;color:var(--accent)}
+.spec-card .risk span{font-size:.92rem;color:var(--ink-2)}
+.spec-card .meter{margin-top:14px}
+
+/* ---------- sensors ---------- */
+.notice{background:var(--surface);border-radius:6px;padding:20px 24px;max-width:62ch;margin-bottom:clamp(28px,4vw,44px)}
+.notice b{display:block;margin-bottom:4px}
+.timeline{background:var(--surface);border-radius:6px;padding:clamp(22px,3.5vw,44px)}
+.tl-track{position:relative;height:56px;margin:64px 0 38px}
+.tl-bar{position:absolute;left:0;right:0;top:20px;height:16px;background:var(--surface-2);border-radius:2px;overflow:hidden}
+.tl-bar i{position:absolute;left:0;top:0;bottom:0;width:85.12%;background:var(--ink-3);transform-origin:0 50%}
+.tl-mark{position:absolute;left:85.12%;top:0;bottom:0;width:0;transform:translateX(-1.5px)}
+.tl-mark::before{content:"";position:absolute;left:0;top:10px;bottom:-4px;width:3px;background:var(--accent)}
+.tl-mark b{position:absolute;bottom:62px;right:-8px;white-space:nowrap;color:var(--accent-text);font-weight:600;font-size:.95rem}
+.tl-axis{display:flex;justify-content:space-between;font-size:.88rem;color:var(--ink-3)}
+.tl-facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:clamp(14px,3vw,40px);margin-top:30px}
+.tl-facts b{display:block;font-family:var(--font-display);font-weight:800;font-size:clamp(1.5rem,3vw,2.3rem);letter-spacing:-.03em;line-height:1}
+.tl-facts span{display:block;margin-top:6px;color:var(--ink-2);font-size:.92rem;line-height:1.35}
+.recs{margin-top:clamp(32px,4vw,56px);display:grid}
+.rec{display:grid;grid-template-columns:minmax(130px,200px) minmax(0,1.3fr) minmax(0,1fr) 200px;gap:16px;align-items:center;padding:14px 0;background:linear-gradient(var(--surface-2),var(--surface-2)) bottom/100% 1px no-repeat}
+.rec:last-child{background:none}
+.rec .id{font-weight:600;overflow-wrap:anywhere}
+.rec .rig{color:var(--ink-2);font-size:.92rem}
+.pill{display:inline-flex;align-items:center;gap:8px;font-size:.9rem;font-weight:600}
+.pill::before{content:"";width:10px;height:10px;border-radius:50%;background:var(--ink-3);flex:none}
+.pill.hit{color:var(--accent-text)} .pill.hit::before{background:var(--accent)}
+.pill.watch{color:var(--ink)} .pill.watch::before{background:transparent;box-shadow:inset 0 0 0 2px var(--accent)}
+.pill.quiet{color:var(--ink-2)}
+.pill.ok{color:var(--cool-text)} .pill.ok::before{background:var(--cool)}
+.conf{display:flex;align-items:center;gap:10px;justify-content:flex-end}
+.segs{display:flex;gap:3px}
+.segs i{width:14px;height:8px;border-radius:1px;background:var(--step)}
+.segs i.on{background:var(--ink)}
+.conf span{font-size:.84rem;color:var(--ink-2);min-width:96px;text-align:right;white-space:nowrap}
+.thermal{margin-top:clamp(32px,4vw,56px);display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr);gap:clamp(22px,4vw,64px);align-items:start}
+.th-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px 20px}
+.th-grid b{display:block;font-family:var(--font-display);font-weight:800;font-size:clamp(1.3rem,2.4vw,1.9rem);letter-spacing:-.025em;line-height:1.05}
+.th-grid span{display:block;margin-top:4px;font-size:.88rem;color:var(--ink-2)}
+
+/* ---------- limits ---------- */
+.limits{display:grid;gap:0;counter-reset:l}
+.limits li{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:clamp(14px,4vw,64px);padding:22px 0;background:linear-gradient(var(--surface-2),var(--surface-2)) bottom/100% 1px no-repeat}
+.limits li:last-child{background:none}
+.limits h3{font-size:clamp(1.15rem,2vw,1.5rem)}
+.limits p{color:var(--ink-2)}
+
+/* ---------- footer ---------- */
+footer{margin-top:clamp(64px,8vw,112px);padding-block:clamp(32px,5vw,56px) 48px;background:var(--surface)}
+footer .wrap{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:28px;align-items:end}
+.big-name{font-family:var(--font-display);font-weight:800;font-size:clamp(2.4rem,8vw,7rem);line-height:.9;letter-spacing:-.045em}
+footer p{color:var(--ink-2);font-size:.95rem}
+footer .links{display:flex;flex-direction:column;gap:8px;align-items:flex-start}
+footer a.l{font-weight:600;text-underline-offset:4px}
+
+/* ---------- motion states (only when scripts run) ---------- */
+.anim [data-reveal]{opacity:0;transform:translateY(26px)}
+.anim .meter > i,.anim .shap-row .trk i,.anim .tl-bar i{transform:scaleX(0)}
+.anim .sq{transform:scale(0)}
+.anim .cm .c{opacity:0;transform:scale(.9)}
+
+@media (max-width:920px){
+  .hero .wrap{grid-template-columns:minmax(0,1fr);grid-template-areas:"h" "t" "a"}
+  .hero-art{aspect-ratio:4/3;max-height:none}
+  .card{grid-template-columns:minmax(0,1fr);align-items:start;min-height:0}
+  .two,.thermal,footer .wrap{grid-template-columns:minmax(0,1fr)}
+  .rec{grid-template-columns:minmax(0,1fr) auto;row-gap:4px}
+  .rec .rig{grid-column:1/-1;order:3}
+  .rec .rd{grid-column:1/-1;order:2}
+  .rec .conf{grid-column:2;grid-row:1}
+  .limits li{grid-template-columns:minmax(0,1fr);gap:6px}
+}
+@media (max-width:680px){
+  .bar nav{display:none}
+  .bar .wrap{gap:10px}.mark{margin-right:auto;font-size:1rem}.hs{display:none}.bar .btn{padding:11px 14px;font-size:.9rem}
+  .facts{grid-template-columns:1fr 1fr}.facts li:last-child{grid-column:1/-1}
+  .duel,.pair{grid-template-columns:minmax(0,1fr)}
+  .wall-row{grid-template-columns:minmax(0,1fr);gap:8px}
+  .shap-row{grid-template-columns:minmax(0,1fr) 48px;gap:6px 10px}
+  .shap-row .lab{text-align:left;grid-column:1/-1}
+  .tl-facts,.th-grid{grid-template-columns:1fr 1fr}
+  .tl-mark b{right:auto;left:-120px;white-space:normal;width:150px;text-align:right}
+  .sq{width:13px;height:13px}.sq.dp::after{left:4px;top:4px;width:5px;height:5px}
+}
+@media (prefers-reduced-motion:reduce){
+  *{scroll-behavior:auto!important;transition:none!important}
+  .card{position:static}
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<div class="progress" id="progress" aria-hidden="true"></div>
+
+<header class="bar">
+  <div class="wrap">
+    <a class="mark" href="#top">IN939 Crack Risk</a>
+    <nav aria-label="Sections">
+      <a href="#literature">Literature</a><a href="#model">Model</a><a href="#sensors">Sensors</a><a href="#limits">Limits</a>
+    </nav>
+    <div class="bar-end">
+      <button class="btn btn-ghost" id="theme" type="button" aria-label="Switch colour theme">Light</button>
+      <a class="btn" href="../paper/IN939_LPBF_paper.pdf"><span>Read<span class="hs"> the</span> paper</span></a>
+    </div>
+  </div>
+</header>
+
+<main id="main">
+<section class="hero" id="top">
+  <div class="wrap">
+    <h1 data-reveal>Will this print <em>crack?</em></h1>
+    <div class="copy">
+      <p class="lede" data-reveal>Three kinds of evidence on IN939 laser powder bed fusion: a model trained on published prints, real acoustic and thermal recordings, and the honest gaps between them.</p>
+      <div class="cta" data-reveal>
+        <a class="btn btn-lg" href="#literature">See the evidence</a>
+      </div>
+      <ul class="facts" data-reveal>
+        <li><b>114 of 129</b><span>published conditions reported cracking</span></li>
+        <li><b>92.2%</b><span>cross-validated accuracy, against 88.4% for always saying “cracked”</span></li>
+        <li><b>0 of 11</b><span>real recordings have a confirmed outcome</span></li>
+      </ul>
+    </div>
+    <div class="hero-art" data-reveal>
+      <canvas id="bed" aria-label="Animation of a part being printed layer by layer with a crack running through it" role="img"></canvas>
+      <p class="art-cap">Click the part to start a crack.</p>
+    </div>
+  </div>
+</section>
+
+<section aria-labelledby="inst-h">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="tag" data-reveal>How it fits together</span>
+      <h2 id="inst-h" data-reveal>Three instruments, one question.</h2>
+      <p class="sub" data-reveal>No single dataset was enough, so each source does the job it suits. They are reported side by side and never blended into one claim.</p>
+    </div>
+    <div class="stack">
+      <article class="card" style="--i:0">
+        <div>
+          <span class="tag cool">Stream 2 · Literature</span>
+          <h3>Ten published studies, mined into one dataset.</h3>
+          <p>An LLM-assisted pipeline read each paper, kept an evidence quote for every field, and a set of checks cleaned the result.</p>
+        </div>
+        <div class="big">129<small>samples from 10 papers</small></div>
+      </article>
+      <article class="card is-accent" style="--i:1">
+        <div>
+          <span class="tag">Stream 3 · Model</span>
+          <h3>A Random Forest, explained with SHAP.</h3>
+          <p>Trained on the literature and tested five ways. It says which factor matters most, not only what it predicts.</p>
+        </div>
+        <div class="big">92.2%<small>cross-validated accuracy</small></div>
+      </article>
+      <article class="card" style="--i:2">
+        <div>
+          <span class="tag">Stream 1 · Sensors</span>
+          <h3>Real recordings, read for a fracture signature.</h3>
+          <p>No confirmed labels exist, so every reading is a physics-based proxy and is marked that way.</p>
+        </div>
+        <div class="big">10<small>acoustic recordings, plus 1 thermal</small></div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section id="literature" aria-labelledby="lit-h">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="tag cool" data-reveal>Stream 2 · Literature</span>
+      <h2 id="lit-h" data-reveal>IN939 cracks in almost every published print.</h2>
+      <p class="sub" data-reveal>Each square is one printed condition from the literature. The imbalance is real: crack-free IN939 is rare, and 11 of the 15 crack-free samples come from the four studies that tried doping.</p>
+    </div>
+    <figure class="wall" id="wall" aria-label="One square per published condition, grouped by source paper. 114 of 129 cracked; 13 were doped."></figure>
+    <div class="legend" data-reveal>
+      <span><i style="background:var(--accent)"></i>Reported cracking</span>
+      <span><i style="background:var(--cool)"></i>Reported crack-free</span>
+      <span><i style="background:var(--ink-3);position:relative"><svg width="14" height="14" viewBox="0 0 14 14" style="position:absolute;left:0;top:0" aria-hidden="true"><circle cx="7" cy="7" r="3" fill="var(--ground)"/></svg></i>Doped sample</span>
+    </div>
+    <p class="callout" data-reveal>The three studies that changed only the process settings report cracking in every sample. Three of the four studies with doped samples report fewer cracks. In the fourth, both samples cracked.</p>
+  </div>
+</section>
+
+<section id="model" aria-labelledby="model-h">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="tag" data-reveal>Stream 3 · Model</span>
+      <h2 id="model-h" data-reveal>High accuracy, and why that is not the headline.</h2>
+      <p class="sub" data-reveal>A Random Forest trained on the 129 samples, with every sample held out and predicted once across five folds.</p>
+    </div>
+
+    <div class="duel">
+      <div data-reveal>
+        <div class="num accent"><span data-count="92.2" data-dec="1">92.2</span><small>%</small></div>
+        <div class="meter accent" style="--w:92.2%"><i></i></div>
+        <p class="cap">The model’s cross-validated accuracy.</p>
+      </div>
+      <div data-reveal>
+        <div class="num"><span data-count="88.4" data-dec="1">88.4</span><small>%</small></div>
+        <div class="meter" style="--w:88.4%"><i></i></div>
+        <p class="cap">What you score by answering “cracked” every time.</p>
+      </div>
+    </div>
+    <div class="pair">
+      <div data-reveal>
+        <div class="num"><span data-count="0.65" data-dec="2">0.65</span></div>
+        <p class="cap">Precision on the 15 crack-free samples. These are the cases that matter.</p>
+      </div>
+      <div data-reveal>
+        <div class="num"><span data-count="0.73" data-dec="2">0.73</span></div>
+        <p class="cap">Recall on the same 15. The model found 11 and missed 4.</p>
+      </div>
+    </div>
+
+    <div class="block">
+      <h3 data-reveal>What drives the prediction</h3>
+      <p class="small" data-reveal>Mean absolute SHAP value: how far each feature pushes a prediction, averaged over all 129 samples.</p>
+      <div class="shap" role="list" aria-label="SHAP feature importance">
+        <div class="shap-row top" role="listitem"><span class="lab">Doping status</span><span class="trk"><i style="--w:100%"></i></span><span class="val">0.194</span></div>
+        <div class="shap-row" role="listitem"><span class="lab">Layer thickness</span><span class="trk"><i style="--w:46.9%"></i></span><span class="val">0.091</span></div>
+        <div class="shap-row" role="listitem"><span class="lab">Laser power</span><span class="trk"><i style="--w:36.6%"></i></span><span class="val">0.071</span></div>
+        <div class="shap-row" role="listitem"><span class="lab">Hatch spacing</span><span class="trk"><i style="--w:35.1%"></i></span><span class="val">0.068</span></div>
+        <div class="shap-row" role="listitem"><span class="lab">Scan speed</span><span class="trk"><i style="--w:18.6%"></i></span><span class="val">0.036</span></div>
+        <div class="shap-row" role="listitem"><span class="lab">VED (composite)</span><span class="trk"><i style="--w:12.4%"></i></span><span class="val">0.024</span></div>
+      </div>
+      <p class="callout" data-reveal>Doping status counts for more than twice the next feature and more than eight times VED. All 13 doped samples come from four papers, so part of this may be the source and not the chemistry.</p>
+    </div>
+
+    <div class="block two">
+      <div>
+        <h3 data-reveal>Where it was right and wrong</h3>
+        <p class="small" data-reveal>Out-of-fold predictions for all 129 samples.</p>
+        <div class="cm" role="img" aria-label="Confusion matrix. Actual no crack: 11 predicted correctly, 4 missed. Actual crack: 6 missed, 108 predicted correctly.">
+          <div class="h"></div><div class="h">Predicted no crack</div><div class="h">Predicted crack</div>
+          <div class="h r">Actual no crack</div>
+          <div class="c ok"><b>11</b><span>correct</span></div>
+          <div class="c bad"><b>4</b><span>missed</span></div>
+          <div class="h r">Actual crack</div>
+          <div class="c bad"><b>6</b><span>missed</span></div>
+          <div class="c ok"><b>108</b><span>correct</span></div>
+        </div>
+      </div>
+      <div>
+        <h3 data-reveal>Applied to the real specimens</h3>
+        <p class="small" data-reveal>Print settings were never recorded, so two recipes from a matching reference paper stand in. This is an illustration, not a validated result.</p>
+        <div class="spec">
+          <div class="spec-card" data-reveal>
+            <div class="nm">Lowest-cracking-density recipe</div>
+            <div class="ved">VED about 88.0 J/mm³, no doping</div>
+            <div class="risk"><b>1.00</b><span>predicted probability of cracking</span></div>
+            <div class="meter accent" style="--w:100%"><i></i></div>
+          </div>
+          <div class="spec-card" data-reveal>
+            <div class="nm">Lowest-porosity recipe</div>
+            <div class="ved">VED about 158.3 J/mm³, no doping</div>
+            <div class="risk"><b>1.00</b><span>predicted probability of cracking</span></div>
+            <div class="meter accent" style="--w:100%"><i></i></div>
+          </div>
+        </div>
+        <p class="small" style="margin-top:16px" data-reveal>Both recipes are undoped, which the model treats as high risk whatever the VED. So this result cannot tell the two settings apart.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="sensors" aria-labelledby="sens-h">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="tag" data-reveal>Stream 1 · Sensors</span>
+      <h2 id="sens-h" data-reveal>Reading a fracture from the signal alone.</h2>
+      <p class="sub" data-reveal>A real fracture shows up as a large burst on more than one sensor, then silence. That is what the analysis looks for.</p>
+    </div>
+    <div class="notice" data-reveal><b>None of these recordings has a confirmed outcome.</b>Inspection results were never logged, so every reading below is an inference from signal shape, not a verified fact.</div>
+
+    <div class="timeline" data-reveal>
+      <h3>The one recording with full hit-by-hit data</h3>
+      <p class="small" style="margin-top:8px">11,771 timestamped hits from a tensile test.</p>
+      <div class="tl-track">
+        <div class="tl-bar"><i></i></div>
+        <div class="tl-mark"><b>94.13 s</b></div>
+      </div>
+      <div class="tl-axis"><span>0 s</span><span>Session length 110.59 s</span></div>
+      <div class="tl-facts">
+        <div><b>94.13 s</b><span>near-simultaneous, maximum-amplitude hit on both channels</span></div>
+        <div><b>Collapse</b><span>the hit rate drops sharply afterwards</span></div>
+        <div><b>16.47 s</b><span>of recording remain before acquisition ends</span></div>
+      </div>
+    </div>
+
+    <div class="recs" id="recs" role="table" aria-label="Proxy reading and confidence for each recording"></div>
+
+    <div class="thermal">
+      <div>
+        <h3 data-reveal>One thermal recording</h3>
+        <p class="small" data-reveal style="margin-top:10px">Confirmed complete and uncorrupted, but it covers different specimens, so it cannot be lined up with the acoustic data. It has no acoustic channel and is reported as context only.</p>
+      </div>
+      <div class="th-grid" data-reveal>
+        <div><b>35m 44s</b><span>duration</span></div>
+        <div><b>57,898</b><span>frames</span></div>
+        <div><b>382 × 289</b><span>resolution</span></div>
+        <div><b>125 °C</b><span>peak, at 180 s</span></div>
+        <div><b>−0.11 °C/s</b><span>cooling rate afterwards</span></div>
+        <div><b>13 Feb 2026</b><span>recorded</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="limits" aria-labelledby="lim-h">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="tag" data-reveal>What this does not show</span>
+      <h2 id="lim-h" data-reveal>Limits, stated up front.</h2>
+      <p class="sub" data-reveal>The two decisions that shaped the method were reviewed and approved by the project supervisor, Prof. Gregory Gibbons.</p>
+    </div>
+    <ol class="limits">
+      <li data-reveal><h3>Small real sample</h3><p>Ten acoustic recordings are enough to read one at a time, not to train or statistically validate a model.</p></li>
+      <li data-reveal><h3>Proxy labels, not confirmed ones</h3><p>Sensor readings are inferred from signal shape. No CT scan or sectioning confirms them.</p></li>
+      <li data-reveal><h3>Unsynchronised recordings</h3><p>Acoustic data comes from tensile dogbones and thermal data from density cubes. They share no timeline, so they are analysed separately.</p></li>
+      <li data-reveal><h3>Estimated print settings</h3><p>The real specimens’ laser power, speed, hatch and layer values were not recorded. A matching reference paper’s recipe stands in.</p></li>
+      <li data-reveal><h3>Imbalanced literature</h3><p>Only 15 crack-free examples exist across all ten papers. That reflects the alloy, but it makes the minority-class results fragile.</p></li>
+      <li data-reveal><h3>Validation is not grouped by paper</h3><p>Samples from one paper share a printer, powder and reporting style. Testing on a paper the model has never seen may score lower than 92.2%.</p></li>
+      <li data-reveal><h3>Doping is tied to four papers</h3><p>All 13 doped samples come from four studies, so the doping result is partly confounded with the source.</p></li>
+    </ol>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div>
+      <div class="big-name">Crack Signal Readout</div>
+      <p style="margin-top:16px;max-width:52ch">Explainable crack-risk estimation for IN939 laser powder bed fusion. Methodology approved by the project supervisor.</p>
+    </div>
+    <div class="links">
+      <a class="l" href="../paper/IN939_LPBF_paper.pdf">Read the full paper (PDF)</a>
+      <a class="l" href="#top">Back to the top</a>
+      <p>Working draft.</p>
+    </div>
+  </div>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/lenis@1.1.20/dist/lenis.min.js"></script>
+<script>
+(function () {
+  "use strict";
+  var root = document.documentElement;
+  var reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  /* ---------- data ---------- */
+  var WALL = [{"n":"Doğu 2024","s":[[1,0],[1,0],[1,0],[1,0],[1,0],[1,0],[1,0],[1,0],[1,0],[1,0],[1,0],[1,0],[1,0],[1,0],[1,0],[1,0],[1,0],[1,0],[1,0],[1,0],[1,0],[1,0],[1,0],[1,0],[1,0],[1,0],[1,0]]},{"n":"Marchese 2020","s":[[1,0],[1,0],[1,0],[1,0],[1,0],[1,0],[1,0],[1,0],[1,0],[1,0],[1,0],[1,0],[1,0],[1,0],[1,0],[1,0],[1,0],[1,0],[1,0],[1,0],[1,0],[1,0],[1,0],[1,0],[1,0],[1,0],[1,0],[1,0],[1,0],[1,0],[1,0],[1,0],[1,0],[1,0],[1,0],[1,0],[1,0],[1,0],[1,0],[1,0],[1,0],[1,0],[1,0],[1,0],[1,0],[1,0],[1,0],[1,0]]},{"n":"Li 2024/25","s":[[1,0],[1,0],[1,0]]},{"n":"Rodríguez-Barber 2023","s":[[1,0],[0,0],[1,0],[1,0],[0,0],[1,0],[1,0],[1,0],[1,0],[1,0],[1,0],[0,0],[1,0],[1,0],[0,0],[1,0],[1,0],[1,0],[1,0],[1,0],[1,0],[1,0],[1,0],[1,0],[1,0],[1,0],[1,0]]},{"n":"Ozer 2024","s":[[1,0],[1,0],[1,0]]},{"n":"Hu 2024","s":[[1,0]]},{"n":"Zhang 2023","s":[[1,0],[1,1],[0,1]]},{"n":"Chen 2026","s":[[1,0],[1,1]]},{"n":"Ding 2026","s":[[1,0],[0,1],[0,1]]},{"n":"Bae 2025","s":[[1,0],[1,0],[1,0],[1,0],[0,1],[0,1],[0,1],[0,1],[0,1],[0,1],[0,1],[0,1]]}];
+  var RECS = [
+    ["dogbone_CSV7", "Dogbone tensile, raw hit-list", "hit", "Likely fracture signature", 5, "High"],
+    ["dogbone_CSV8", "Dogbone tensile", "hit", "Likely fracture signature", 4, "Medium-high"],
+    ["Brompton_data2", "Brompton rig, rig unconfirmed", "hit", "Likely fracture signature", 3, "Medium"],
+    ["dogbone_CSV9MEG", "Dogbone tensile", "watch", "Watch, mildly elevated", 2, "Low-medium"],
+    ["dogbone_CSV1", "Dogbone tensile", "quiet", "Baseline, inconclusive", 1, "Low"],
+    ["dogbone_CSV2", "Dogbone tensile", "quiet", "Baseline, inconclusive", 1, "Low"],
+    ["dogbone_CSV3", "Dogbone tensile", "quiet", "Baseline, inconclusive", 1, "Low"],
+    ["dogbone_CSV4", "Dogbone tensile", "quiet", "Baseline, inconclusive", 1, "Low"],
+    ["dogbone_CSV6", "Dogbone tensile", "quiet", "Baseline, inconclusive", 1, "Low"],
+    ["dogbone_CSV0", "Dogbone tensile", "ok", "No significant activity", 1, "Low"],
+    ["M280-M300 cubes", "Thermal camera, Area 1", "quiet", "Not assessable this way", 0, "Not applicable"]
+  ];
+
+  /* ---------- build the specimen wall and the recording list ---------- */
+  var wall = document.getElementById("wall");
+  WALL.forEach(function (p) {
+    var cracked = p.s.filter(function (x) { return x[0]; }).length;
+    var doped = p.s.filter(function (x) { return x[1]; }).length;
+    var row = document.createElement("div");
+    row.className = "wall-row";
+    row.setAttribute("data-reveal", "");
+    var nm = document.createElement("div");
+    nm.className = "wall-name";
+    nm.textContent = p.n;
+    var meta = document.createElement("span");
+    meta.textContent = cracked + " of " + p.s.length + " cracked" + (doped ? ", " + doped + " doped" : "");
+    nm.appendChild(meta);
+    var cells = document.createElement("div");
+    cells.className = "cells";
+    cells.setAttribute("aria-hidden", "true");
+    p.s.forEach(function (x) {
+      var s = document.createElement("span");
+      s.className = "sq" + (x[0] ? "" : " no") + (x[1] ? " dp" : "");
+      cells.appendChild(s);
+    });
+    row.appendChild(nm); row.appendChild(cells);
+    wall.appendChild(row);
+  });
+
+  var recs = document.getElementById("recs");
+  RECS.forEach(function (r) {
+    var row = document.createElement("div");
+    row.className = "rec";
+    row.setAttribute("role", "row");
+    row.setAttribute("data-reveal", "");
+    var segs = "";
+    for (var i = 1; i <= 5; i++) segs += '<i class="' + (i <= r[4] ? "on" : "") + '"></i>';
+    row.innerHTML =
+      '<div class="id" role="cell"></div><div class="rd" role="cell"><span class="pill ' + r[2] + '"></span></div>' +
+      '<div class="rig" role="cell"></div><div class="conf" role="cell"><span class="segs" aria-hidden="true">' + segs + '</span><span></span></div>';
+    row.querySelector(".id").textContent = r[0];
+    row.querySelector(".pill").textContent = r[3];
+    row.querySelector(".rig").textContent = r[1];
+    row.querySelector(".conf > span:last-child").textContent = r[5];
+    recs.appendChild(row);
+  });
+
+  /* ---------- theme ---------- */
+  var btn = document.getElementById("theme");
+  function isLight() {
+    var t = root.getAttribute("data-theme");
+    if (t) return t === "light";
+    return window.matchMedia("(prefers-color-scheme: light)").matches;
+  }
+  function syncBtn() { btn.textContent = isLight() ? "Dark" : "Light"; }
+  try { var saved = localStorage.getItem("cr-theme"); if (saved) root.setAttribute("data-theme", saved); } catch (e) {}
+  syncBtn();
+  btn.addEventListener("click", function () {
+    var next = isLight() ? "dark" : "light";
+    root.setAttribute("data-theme", next);
+    try { localStorage.setItem("cr-theme", next); } catch (e) {}
+    syncBtn();
+    window.dispatchEvent(new Event("themechange"));
+  });
+  window.matchMedia("(prefers-color-scheme: light)").addEventListener("change", function () { syncBtn(); window.dispatchEvent(new Event("themechange")); });
+
+  /* ---------- hero: a part being printed ---------- */
+  (function bed() {
+    var cv = document.getElementById("bed");
+    if (!cv || !cv.getContext) return;
+    var ctx = cv.getContext("2d");
+    var W = 0, H = 0, dpr = 1, pal = {};
+    var N = 30, part = { x: 0, y: 0, w: 0, h: 0, rh: 0 };
+    var layer = 0, prog = 0, cracks = [], hold = 0, running = false, visible = true, autoCrack = false;
+    var off = document.createElement("canvas"), octx = off.getContext("2d");
+    var seed = 7;
+    function rnd() { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; }
+    function css(n) { return getComputedStyle(root).getPropertyValue(n).trim(); }
+    function mix(a, b, t) {
+      var pa = parse(a), pb = parse(b);
+      return "rgb(" + Math.round(pa[0] + (pb[0] - pa[0]) * t) + "," + Math.round(pa[1] + (pb[1] - pa[1]) * t) + "," + Math.round(pa[2] + (pb[2] - pa[2]) * t) + ")";
+    }
+    function parse(c) {
+      if (c[0] === "#") { if (c.length === 4) c = "#" + c[1] + c[1] + c[2] + c[2] + c[3] + c[3]; return [parseInt(c.slice(1, 3), 16), parseInt(c.slice(3, 5), 16), parseInt(c.slice(5, 7), 16)]; }
+      var m = c.match(/\d+/g) || [0, 0, 0]; return [+m[0], +m[1], +m[2]];
+    }
+    function colours() {
+      pal = { ground: css("--surface"), plate: css("--step"), a: css("--ink-3"), b: css("--ink-2"), accent: css("--accent"), ink: css("--ink") };
+    }
+    function size() {
+      var r = cv.getBoundingClientRect();
+      dpr = Math.min(window.devicePixelRatio || 1, 2);
+      W = Math.max(1, Math.round(r.width)); H = Math.max(1, Math.round(r.height));
+      cv.width = W * dpr; cv.height = H * dpr; off.width = W * dpr; off.height = H * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0); octx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      part.w = W * 0.8; part.x = (W - part.w) / 2; part.h = H * 0.74; part.rh = part.h / N; part.y = H - H * 0.17 - part.h;
+    }
+    function drawRow(i) {
+      var y = part.y + part.h - (i + 1) * part.rh;
+      octx.fillStyle = mix(pal.a, pal.b, Math.min(1, i / N));
+      octx.fillRect(part.x, y, part.w, part.rh + 0.5);
+      octx.fillStyle = "rgba(0,0,0,0.16)";
+      for (var x = part.x + (i % 2) * 3; x < part.x + part.w; x += 7) octx.fillRect(x, y, 1, part.rh);
+      octx.fillStyle = "rgba(255,255,255,0.06)";
+      octx.fillRect(part.x, y, part.w, 1);
+    }
+    function rebuild(upto) {
+      octx.clearRect(0, 0, W, H);
+      octx.fillStyle = pal.plate; octx.fillRect(part.x - part.w * 0.06, part.y + part.h, part.w * 1.12, H * 0.04);
+      for (var i = 0; i < upto; i++) drawRow(i);
+    }
+    function makeCrack(px, py) {
+      var pts = [[px, py]], x = px, y = py, rh = part.rh, top = part.y + 2;
+      var dir = rnd() < 0.5 ? -1 : 1;
+      while (y > top && pts.length < 60) {
+        y -= rh * (0.5 + rnd() * 0.9);
+        x += dir * rh * (0.15 + rnd() * 1.0);
+        if (rnd() < 0.3) dir = -dir;
+        x = Math.max(part.x + 4, Math.min(part.x + part.w - 4, x));
+        pts.push([x, y]);
+      }
+      return { pts: pts, t: 0, len: pts.length - 1 };
+    }
+    function drawCrack(c) {
+      var n = Math.min(c.len, c.t);
+      ctx.save();
+      ctx.lineJoin = "round"; ctx.lineCap = "round";
+      ctx.strokeStyle = pal.accent; ctx.lineWidth = 1.8; ctx.shadowColor = pal.accent; ctx.shadowBlur = 10;
+      ctx.beginPath(); ctx.moveTo(c.pts[0][0], c.pts[0][1]);
+      var i = 1;
+      for (; i <= Math.floor(n); i++) ctx.lineTo(c.pts[i][0], c.pts[i][1]);
+      var f = n - Math.floor(n);
+      if (f > 0 && i <= c.len) ctx.lineTo(c.pts[i - 1][0] + (c.pts[i][0] - c.pts[i - 1][0]) * f, c.pts[i - 1][1] + (c.pts[i][1] - c.pts[i - 1][1]) * f);
+      ctx.stroke(); ctx.restore();
+    }
+    function frame() {
+      ctx.clearRect(0, 0, W, H);
+      ctx.drawImage(off, 0, 0, W, H);
+      if (layer < N) {
+        var y = part.y + part.h - (layer + 1) * part.rh, lx = part.x + part.w * prog;
+        ctx.fillStyle = mix(pal.a, pal.b, Math.min(1, layer / N));
+        ctx.fillRect(part.x, y, part.w * prog, part.rh + 0.5);
+        var g = ctx.createRadialGradient(lx, y, 0, lx, y, part.rh * 5);
+        g.addColorStop(0, "rgba(255,200,150,0.95)"); g.addColorStop(0.25, pal.accent); g.addColorStop(1, "rgba(255,90,31,0)");
+        ctx.save(); ctx.globalAlpha = 0.9; ctx.fillStyle = g; ctx.fillRect(lx - part.rh * 5, y - part.rh * 5, part.rh * 10, part.rh * 10); ctx.restore();
+        ctx.fillStyle = pal.accent; ctx.fillRect(lx - 1, 0, 2, y); /* laser beam */
+      }
+      cracks.forEach(drawCrack);
+    }
+    function step(dt) {
+      if (hold > 0) { hold -= dt; if (hold <= 0) { layer = 0; prog = 0; cracks = []; autoCrack = false; seed = 7; rebuild(0); } return; }
+      if (layer < N) {
+        prog += dt / 0.42;
+        if (prog >= 1) { drawRow(layer); layer++; prog = 0;
+          if (!autoCrack && layer === Math.round(N * 0.62)) { autoCrack = true; cracks.push(makeCrack(part.x + part.w * (0.3 + rnd() * 0.4), part.y + part.h - 1)); }
+        }
+      } else if (cracks.every(function (c) { return c.t >= c.len; })) { hold = 2.4; }
+      cracks.forEach(function (c) { if (c.t < c.len) c.t += dt * 16; });
+    }
+    var last = 0;
+    function loop(ts) {
+      if (!running) return;
+      var dt = Math.min(0.05, (ts - last) / 1000 || 0); last = ts;
+      step(dt); frame();
+      requestAnimationFrame(loop);
+    }
+    function start() { if (running || reduce || !visible || document.hidden) return; running = true; last = performance.now(); requestAnimationFrame(loop); }
+    function stop() { running = false; }
+    function still() {
+      layer = N; cracks = [makeCrack(part.x + part.w * 0.46, part.y + part.h - 1)]; cracks[0].t = cracks[0].len;
+      rebuild(N); frame();
+    }
+    function init() {
+      colours(); size();
+      seed = 7; layer = 0; prog = 0; cracks = []; hold = 0; autoCrack = false;
+      if (reduce) { still(); return; }
+      rebuild(0); frame();
+    }
+    cv.addEventListener("pointerdown", function (e) {
+      var r = cv.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top;
+      if (x < part.x || x > part.x + part.w || y < part.y || y > part.y + part.h) return;
+      var c = makeCrack(x, Math.min(part.y + part.h - 1, y + part.rh * 4));
+      if (reduce) { c.t = c.len; }
+      cracks.push(c);
+      if (reduce) { frame(); }
+    });
+    new IntersectionObserver(function (en) { visible = en[0].isIntersecting; visible ? start() : stop(); }, { threshold: 0.05 }).observe(cv);
+    document.addEventListener("visibilitychange", function () { document.hidden ? stop() : start(); });
+    window.addEventListener("resize", function () { init(); });
+    window.addEventListener("themechange", function () { init(); });
+    init(); start();
+  })();
+
+  /* ---------- top bar gets its own tone once content scrolls under it ---------- */
+  var topbar = document.querySelector(".bar");
+  function stick() { topbar.classList.toggle("is-stuck", (window.scrollY || document.documentElement.scrollTop) > 8); }
+  window.addEventListener("scroll", stick, { passive: true });
+  stick();
+
+  /* ---------- scroll motion (only if the libraries loaded) ---------- */
+  var haveGsap = !!(window.gsap && window.ScrollTrigger);
+  if (reduce || !haveGsap) return;
+
+  gsap.registerPlugin(ScrollTrigger);
+  root.classList.add("anim");
+
+  var lenis = null;
+  if (window.Lenis) {
+    lenis = new Lenis({ lerp: 0.1, smoothWheel: true });
+    lenis.on("scroll", ScrollTrigger.update);
+    gsap.ticker.add(function (t) { lenis.raf(t * 1000); });
+    gsap.ticker.lagSmoothing(0);
+    document.querySelectorAll('a[href^="#"]').forEach(function (a) {
+      a.addEventListener("click", function (e) {
+        var id = a.getAttribute("href");
+        var el = id.length > 1 && document.querySelector(id);
+        if (el) { e.preventDefault(); lenis.scrollTo(el, { offset: -64 }); history.replaceState(null, "", id); }
+      });
+    });
+  }
+
+  gsap.to("#progress", { scaleX: 1, ease: "none", scrollTrigger: { start: 0, end: "max", scrub: 0.2 } });
+
+  ScrollTrigger.batch("[data-reveal]", {
+    start: "top 90%", once: true,
+    onEnter: function (els) { gsap.to(els, { opacity: 1, y: 0, duration: 0.8, ease: "power3.out", stagger: 0.08, overwrite: true }); }
+  });
+
+  document.querySelectorAll(".meter > i, .shap-row .trk i, .tl-bar i").forEach(function (el) {
+    gsap.to(el, { scaleX: 1, duration: 1.1, ease: "power3.out", scrollTrigger: { trigger: el, start: "top 92%", once: true } });
+  });
+
+  document.querySelectorAll(".wall-row").forEach(function (row) {
+    gsap.to(row.querySelectorAll(".sq"), { scale: 1, duration: 0.4, ease: "back.out(2)", stagger: { each: 0.012, from: "start" },
+      scrollTrigger: { trigger: row, start: "top 92%", once: true } });
+  });
+
+  gsap.to(".cm .c", { opacity: 1, scale: 1, duration: 0.5, ease: "power3.out", stagger: 0.12, scrollTrigger: { trigger: ".cm", start: "top 85%", once: true } });
+
+  document.querySelectorAll("[data-count]").forEach(function (el) {
+    var end = parseFloat(el.getAttribute("data-count")), dec = parseInt(el.getAttribute("data-dec") || "0", 10), o = { v: 0 };
+    el.textContent = (0).toFixed(dec);
+    gsap.to(o, { v: end, duration: 1.4, ease: "power2.out", onUpdate: function () { el.textContent = o.v.toFixed(dec); },
+      scrollTrigger: { trigger: el, start: "top 90%", once: true } });
+  });
+
+  window.addEventListener("load", function () { ScrollTrigger.refresh(); });
+})();
+</script>
+</body>
+</html>
